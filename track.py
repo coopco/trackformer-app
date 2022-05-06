@@ -13,8 +13,8 @@ import yaml
 from trackformer import Trackformer
 from util import video_to_frames, frames_to_video
 
-def main(obj_detect_checkpoint_file, tracker_cfg, data_root_dir, output_dir,
-         write_images="pretty", interpolate=False, debug=False):
+def main(checkpoint_file, tracker_cfg, data_root_dir, output_dir,
+         write_images="pretty", debug=False):
 
     #torch.manual_seed(seed)
     #torch.cuda.manual_seed(seed)
@@ -26,10 +26,9 @@ def main(obj_detect_checkpoint_file, tracker_cfg, data_root_dir, output_dir,
 
     # Build Model
     # Parse all non-generic args to init call
-    # args = obj_detect_checkpoint_file, tracker_cfg
+    # args = checkpoint_file, tracker_cfg
     tracker = Trackformer()
-    tracker.build_model(obj_detect_checkpoint_file, tracker_cfg)
-    img_transform = tracker.img_transform
+    tracker.build_model(checkpoint_file, tracker_cfg)
 
     start = time.time()
 
@@ -51,7 +50,7 @@ def main(obj_detect_checkpoint_file, tracker_cfg, data_root_dir, output_dir,
         with open(osp.join(output_dir, "progress.txt"), "w+") as file:
             file.write(f"Tracking {str(frame_id+1)} {len(tracker.data_loader)}")
 
-    results = tracker.results(interpolate)
+    results = tracker.results()
     time_total = time.time() - start
 
 
@@ -77,7 +76,6 @@ if __name__=="__main__":
     parser = ArgumentParser()
     parser.add_argument("-u", "--uuid", dest="uuid", default="../test_track")
     parser.add_argument("--plotseq", action='store_true', dest="plotseq")
-    parser.add_argument("--interpolate", action='store_true', dest="interpolate")
     parser.add_argument("--debug", action='store_true', dest="debug") #TODO for plot_seq
     parser.add_argument("-m", "--model-file", dest="model_file",
                         default="models/ant_finetune/checkpoint.pth")
@@ -108,13 +106,12 @@ if __name__=="__main__":
     }
 
 
-    obj_detect_checkpoint_file = args.model_file
+    checkpoint_file = args.model_file
     output_dir = osp.join("uploads", args.uuid)
     data_root_dir = output_dir
     write_images = "pretty" if args.plotseq else False
     write_images = "debug" if args.plotseq else write_images
-    interpolate = args.interpolate
     debug = args.debug
 
-    main(obj_detect_checkpoint_file, tracker_cfg,
-         data_root_dir, output_dir, write_images, interpolate, debug)
+    main(checkpoint_file, tracker_cfg,
+         data_root_dir, output_dir, write_images, debug)
