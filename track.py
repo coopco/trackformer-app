@@ -13,22 +13,20 @@ import yaml
 from trackformer import Trackformer
 from util import video_to_frames, frames_to_video
 
-def main(seed, dataset_name, obj_detect_checkpoint_file, tracker_cfg,
-         write_images, output_dir, interpolate, verbose, load_results_dir,
-         data_root_dir, frame_range,
-         obj_detector_model=None):
+def main(obj_detect_checkpoint_file, tracker_cfg, data_root_dir, output_dir,
+         write_images="pretty", interpolate=False, debug=False):
 
-    # set all seeds
-    if seed is not None:
-        torch.manual_seed(seed)
-        torch.cuda.manual_seed(seed)
-        torch.backends.cudnn.deterministic = True
+    #torch.manual_seed(seed)
+    #torch.cuda.manual_seed(seed)
+    #torch.backends.cudnn.deterministic = True
 
     if output_dir is not None:
         if not osp.exists(output_dir):
             os.makedirs(output_dir)
 
     # Build Model
+    # Parse all non-generic args to init call
+    # args = obj_detect_checkpoint_file, tracker_cfg
     tracker = Trackformer()
     tracker.build_model(obj_detect_checkpoint_file, tracker_cfg)
     img_transform = tracker.img_transform
@@ -43,10 +41,13 @@ def main(seed, dataset_name, obj_detect_checkpoint_file, tracker_cfg,
     tracker.reset()
     tracker.build_dataset(data_root_dir)
 
+    debug=True
     for frame_id, frame_data in enumerate(tracker.data_loader):
+        if debug and frame_id == 10:
+            break
+
         print(frame_id)
         tracker.step(frame_data)
-        # TODO Write progress to file
         with open(osp.join(output_dir, "progress.txt"), "w+") as file:
             file.write(f"Tracking {str(frame_id+1)} {len(tracker.data_loader)}")
 
@@ -74,24 +75,17 @@ def main(seed, dataset_name, obj_detect_checkpoint_file, tracker_cfg,
 
 if __name__=="__main__":
     parser = ArgumentParser()
-    parser.add_argument("-u", "--uuid", dest="uuid")
+    parser.add_argument("-u", "--uuid", dest="uuid", default="../test_track")
     parser.add_argument("--plotseq", action='store_true', dest="plotseq")
+    parser.add_argument("--interpolate", action='store_true', dest="interpolate")
+    parser.add_argument("--debug", action='store_true', dest="debug") #TODO for plot_seq
+    parser.add_argument("-m", "--model-file", dest="model_file",
+                        default="models/ant_finetune/checkpoint.pth")
 
     args = parser.parse_args()
 
-
-    # TODO put this stuff back in config file
-    seed = 666
-    verbose = "false"
-    load_results_dir = "null"
-    dataset_name = "DEMO"
-    obj_detect_checkpoint_file = "models/ant_finetune/checkpoint.pth"
-    interpolate = False
-    data_root_dir = "test_track"
-    output_dir = "test_track"
-
-    write_images = "pretty"
-
+    # TODO Put these args back in file
+    #
     tracker_cfg = {
         # [False, 'center_distance', 'min_iou_0_5']
         'public_detections': False,
@@ -113,20 +107,14 @@ if __name__=="__main__":
         'reid_greedy_matching': 'false'
     }
 
-    frame_range = {
-        'start': 0.0,
-        'end': 1.0
-    }
 
-    obj_detector_model = None
-
+    obj_detect_checkpoint_file = args.model_file
     output_dir = osp.join("uploads", args.uuid)
     data_root_dir = output_dir
     write_images = "pretty" if args.plotseq else False
-    main(seed, dataset_name, obj_detect_checkpoint_file, tracker_cfg,
-         write_images, output_dir, interpolate, verbose, load_results_dir,
-         data_root_dir, frame_range,
-         obj_detector_model)
+    write_images = "debug" if args.plotseq else write_images
+    interpolate = args.interpolate
+    debug = args.debug
 
-
-
+    main(obj_detect_checkpoint_file, tracker_cfg,
+         data_root_dir, output_dir, write_images, interpolate, debug)
