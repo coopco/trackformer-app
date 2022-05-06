@@ -17,6 +17,7 @@ from src.trackformer.util.track_utils_simple import interpolate_tracks, plot_seq
 
 from src.trackformer.datasets.tracking.demo_sequence import DemoSequence
 
+# TODO better tracker_cfg handling
 # TODO Do it without this factory code
 # TODO Move this file somewhere else
 DATASETS = {}
@@ -41,7 +42,26 @@ class TrackDatasetFactory:
 
 class Trackformer:
     def __init__(self):
-        pass
+        self.tracker_cfg = {
+            # [False, 'center_distance', 'min_iou_0_5']
+            'public_detections': False,
+            # score threshold for detections
+            'detection_obj_score_thresh': 0.9,
+            # score threshold for keeping the track alive
+            'track_obj_score_thresh': 0.8,
+            # NMS threshold for detection
+            'detection_nms_thresh': 0.9,
+            # NMS theshold while tracking
+            'track_nms_thresh': 0.9,
+            # motion model settings
+            # How many timesteps inactive tracks are kept and cosidered for reid
+            'inactive_patience': 5,
+            # How similar do image and old track need to be to be considered the same person
+            'reid_sim_threshold': 0.0,
+            'reid_sim_only': 'false',
+            'reid_score_thresh': 0.8,
+            'reid_greedy_matching': 'false'
+        }
 
     def build_dataset(self, data_root_dir):
         # Extract frames from video (util file?)
@@ -52,7 +72,7 @@ class Trackformer:
         seq = self.dataset[0]
         self.data_loader = DataLoader(seq)
 
-    def build_model(self, checkpoint_file, tracker_cfg):
+    def build_model(self, checkpoint_file):
         # object detection
         obj_detect_config_path = os.path.join(
             os.path.dirname(checkpoint_file),
@@ -80,7 +100,7 @@ class Trackformer:
 
         track_logger = None
         tracker = Tracker(
-            obj_detector, obj_detector_post, tracker_cfg,
+            obj_detector, obj_detector_post, self.tracker_cfg,
             False, track_logger)
 
         self.tracker = tracker
