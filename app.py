@@ -44,7 +44,10 @@ def upload_file():
 @app.route('/progress/<name>')
 def progress(name):
     # TODO Error handling
-    f = open(os.path.join(app.config["UPLOAD_FOLDER"], name, "progress.txt"))
+    try:
+        f = open(os.path.join(app.config["UPLOAD_FOLDER"], name, "progress.txt"))
+    except FileNotFoundError:
+        return "Processing..."
     progress = f.read()
     f.close()
 
