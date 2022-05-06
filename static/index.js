@@ -8,6 +8,7 @@ window.onload = () => {
       let formData = new FormData();
       formData.append("file", input.files[0]);
       formData.append("plotseq", $("#plotseq").is(":checked"))
+      formData.append("debug", $("#debug").is(":checked"))
       $.ajax({
         url: "/",
         type: "POST",

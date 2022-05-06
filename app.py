@@ -31,11 +31,15 @@ def upload_file():
             os.makedirs(path)
             file.save(os.path.join(path, app.config["UPLOAD_FILENAME"]))
 
-            print(request.form.get('plotseq') == 'true')
+            command = ['python', 'track.py', '--uuid', file_id]
+
             if request.form.get('plotseq') == "true":
-                subprocess.Popen(['python', 'track.py', '--uuid', file_id, '--plotseq'])
-            else:
-                subprocess.Popen(['python', 'track.py', '--uuid', file_id])
+                command.append('--plotseq')
+            if request.form.get('debug') == "true":
+                command.append('--debug')
+
+            print(command)
+            subprocess.Popen(command)
 
             return file_id
 
