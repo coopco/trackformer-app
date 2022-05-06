@@ -7,7 +7,7 @@ from argparse import ArgumentParser
 from trackformer import Trackformer
 from util import video_to_frames, frames_to_video
 
-def main(checkpoint_file, data_root_dir, output_dir,
+def main(checkpoint_file, data_root_dir, output_dir, out_name="out",
          write_images="pretty", debug=False):
     if output_dir is not None:
         if not osp.exists(output_dir):
@@ -44,12 +44,13 @@ def main(checkpoint_file, data_root_dir, output_dir,
 
     #   Write results
     if output_dir is not None:
-        tracker.write_results(results, osp.join(output_dir, "data.csv"))
+        path = osp.join(output_dir, f"{out_name}.csv")
+        tracker.write_results(results, path)
 
         if write_images:
             out_path = osp.join(output_dir, "plots")
             tracker.plot_seq(results, out_path, write_images)
-            frames_to_video(out_path, osp.join(output_dir, "out.mp4"))
+            frames_to_video(out_path, osp.join(output_dir, f"{out_name}.mp4"))
 
     with open(osp.join(output_dir, "progress.txt"), "w+") as file:
         print("COMPLETE")
@@ -58,18 +59,23 @@ def main(checkpoint_file, data_root_dir, output_dir,
     with open(osp.join(output_dir, "download.txt"), "w+") as file:
         if write_images:
             # Zip
-            with zipfile.ZipFile(osp.join(output_dir, "out.zip"), 'w') as z:
-                z.write(osp.join(output_dir, "data.csv"), "data.csv")
-                z.write(osp.join(output_dir, "out.mp4"), "out.mp4")
+            path = osp.join(output_dir, f"{out_name}.zip")
+            with zipfile.ZipFile(path, 'w') as z:
+                z.write(osp.join(output_dir, f"{out_name}.csv"),
+                        f"{out_name}.csv")
+                z.write(osp.join(output_dir, f"{out_name}.mp4"),
+                        f"{out_name}.mp4")
 
-            file.write("out.zip")
+            file.write(f"{out_name}.zip")
         else:
-            file.write("data.csv")
+            file.write(f"{out_name}.csv")
 
 
 if __name__=="__main__":
     parser = ArgumentParser()
     parser.add_argument("-u", "--uuid", dest="uuid", default="../test_track")
+    parser.add_argument("-o", "--out-name", dest="out_name",
+                        default="out")
     parser.add_argument("--plotseq", action='store_true', dest="plotseq")
     parser.add_argument("--debug", action='store_true', dest="debug") #TODO for plot_seq
     parser.add_argument("-m", "--model-file", dest="model_file",
@@ -84,4 +90,5 @@ if __name__=="__main__":
     write_images = "debug" if args.plotseq else write_images
     debug = args.debug
 
-    main(checkpoint_file, data_root_dir, output_dir, write_images, debug)
+    main(checkpoint_file, data_root_dir, output_dir, args.out_name,
+         write_images, debug)

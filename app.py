@@ -31,7 +31,9 @@ def upload_file():
             os.makedirs(path)
             file.save(os.path.join(path, app.config["UPLOAD_FILENAME"]))
 
-            command = ['python', 'track.py', '--uuid', file_id]
+            out_name = os.path.splitext(file.filename)[0]
+            command = ['python', 'track.py', '--uuid', file_id,
+                       '--out-name', out_name]
 
             if request.form.get('plotseq') == "true":
                 command.append('--plotseq')
