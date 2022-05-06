@@ -4,6 +4,7 @@
 import os
 import sys
 import time
+import csv
 from os import path as osp
 
 import torch
@@ -124,6 +125,32 @@ class Trackformer:
 
         return results
 
-    def write_results(self, results, output_dir):
-        self.dataset[0].write_results(results, output_dir)
+    def write_results(self, results, out_path):
+        """Write the tracks in the format for MOT16/MOT17 sumbission
 
+        results: dictionary with 1 dictionary for every track with
+        {..., i:np.array([x1,y1,x2,y2]), ...} at key track_num
+
+        Each file contains these lines:
+        <frame>, <id>, <bb_left>, <bb_top>, <bb_width>, <bb_height>, <conf>, <x>, <y>, <z>
+        """
+
+        # format_str = "{}, -1, {}, {}, {}, {}, {}, -1, -1, -1"
+        with open(out_path, "w") as r_file:
+            writer = csv.writer(r_file, delimiter=',')
+
+            for i, track in results.items():
+                for frame, data in track.items():
+                    x1 = data['bbox'][0]
+                    y1 = data['bbox'][1]
+                    x2 = data['bbox'][2]
+                    y2 = data['bbox'][3]
+
+                    writer.writerow([
+                        frame + 1,
+                        i + 1,
+                        x1 + 1,
+                        y1 + 1,
+                        x2 - x1 + 1,
+                        y2 - y1 + 1,
+                        -1, -1, -1, -1])

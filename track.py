@@ -1,5 +1,6 @@
 import os
 import time
+import zipfile
 from os import path as osp
 from argparse import ArgumentParser
 
@@ -43,7 +44,7 @@ def main(checkpoint_file, data_root_dir, output_dir,
 
     #   Write results
     if output_dir is not None:
-        tracker.write_results(results, output_dir)
+        tracker.write_results(results, osp.join(output_dir, "data.csv"))
 
         if write_images:
             out_path = osp.join(output_dir, "plots")
@@ -53,6 +54,17 @@ def main(checkpoint_file, data_root_dir, output_dir,
     with open(osp.join(output_dir, "progress.txt"), "w+") as file:
         print("COMPLETE")
         file.write(f"COMPLETE")
+
+    with open(osp.join(output_dir, "download.txt"), "w+") as file:
+        if write_images:
+            # Zip
+            with zipfile.ZipFile(osp.join(output_dir, "out.zip"), 'w') as z:
+                z.write(osp.join(output_dir, "data.csv"), "data.csv")
+                z.write(osp.join(output_dir, "out.mp4"), "out.mp4")
+
+            file.write("out.zip")
+        else:
+            file.write("data.csv")
 
 
 if __name__=="__main__":

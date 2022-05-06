@@ -3,6 +3,7 @@ window.onload = () => {
     $("#progress").text("Processing...")
     link = $("#link");
     input = $("#fileinput")[0];
+    console.log(input.files);
     if (input.files && input.files[0]) {
       let formData = new FormData();
       formData.append("file", input.files[0]);

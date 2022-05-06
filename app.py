@@ -61,7 +61,11 @@ def progress(name):
 @app.route('/uploads/<name>')
 def download_file(name):
     folder = os.path.join(app.config["UPLOAD_FOLDER"], name)
-    return send_from_directory(folder, app.config['DOWNLOAD_FILENAME'])
+    f = open(os.path.join(folder, "download.txt"))
+    download_file = f.read()
+    f.close()
+
+    return send_from_directory(folder, download_file)
 
 
 @app.route('/download', methods=['GET'])
