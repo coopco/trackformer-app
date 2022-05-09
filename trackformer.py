@@ -14,9 +14,9 @@ from torch.utils.data import DataLoader
 from src.trackformer.models import build_model
 from src.trackformer.models.tracker import Tracker
 from src.trackformer.util.misc import nested_dict_to_namespace
-from src.trackformer.util.track_utils_simple import interpolate_tracks, plot_sequence
-
 from src.trackformer.datasets.tracking.demo_sequence import DemoSequence
+
+from util import interpolate_tracks, plot_sequence
 
 # TODO better tracker_cfg handling
 # TODO Do it without this factory code
@@ -116,7 +116,7 @@ class Trackformer:
 
     def plot_seq(self, results, output_dir, options):
         plot_sequence(results, self.data_loader, output_dir,
-            options, False)
+            options)
 
     def results(self, interpolate=False):
         results = self.tracker.get_results()
