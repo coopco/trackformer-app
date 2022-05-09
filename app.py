@@ -47,6 +47,7 @@ def upload_file():
 
     return render_template("index.html")
 
+
 @app.route('/progress/<name>')
 def progress(name):
     # TODO Error handling
@@ -83,6 +84,22 @@ def return_file():
         return send_file(os.path.join("runs/detect", obj), attachment_filename=obj)
     except Exception as e:
         return str(e)
+
+@app.route('/u/<uuid>', methods=['GET'])
+def download_page(uuid):
+    uuids = uuid.split('-')
+    names = []
+    for uuid in uuids:
+        # TODO error handling
+        f = open(os.path.join(app.config["UPLOAD_FOLDER"], uuid, "download.txt"))
+        name = os.path.splitext(f.read())[0]
+        names.append(name)
+        f.close()
+
+    tasks = [{'uuid': uuid, 'name': name} for uuid, name in zip(uuids, names)]
+    # Setup progress get requests?
+    #   Need download.js file in static
+    return render_template('download.html', tasks=tasks)
 
 
 if __name__ == "__main__":

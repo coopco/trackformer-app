@@ -13,6 +13,12 @@ def main(checkpoint_file, data_root_dir, output_dir, out_name="out",
         if not osp.exists(output_dir):
             os.makedirs(output_dir)
 
+    with open(osp.join(output_dir, "download.txt"), "w+") as file:
+        if write_images:
+            file.write(f"{out_name}.zip")
+        else:
+            file.write(f"{out_name}.csv")
+
     # Build Model
     tracker = Trackformer()
     tracker.build_model(checkpoint_file)
@@ -56,19 +62,14 @@ def main(checkpoint_file, data_root_dir, output_dir, out_name="out",
         print("COMPLETE")
         file.write(f"COMPLETE")
 
-    with open(osp.join(output_dir, "download.txt"), "w+") as file:
-        if write_images:
-            # Zip
-            path = osp.join(output_dir, f"{out_name}.zip")
-            with zipfile.ZipFile(path, 'w') as z:
-                z.write(osp.join(output_dir, f"{out_name}.csv"),
-                        f"{out_name}.csv")
-                z.write(osp.join(output_dir, f"{out_name}.mp4"),
-                        f"{out_name}.mp4")
-
-            file.write(f"{out_name}.zip")
-        else:
-            file.write(f"{out_name}.csv")
+    if write_images:
+        # Zip
+        path = osp.join(output_dir, f"{out_name}.zip")
+        with zipfile.ZipFile(path, 'w') as z:
+            z.write(osp.join(output_dir, f"{out_name}.csv"),
+                f"{out_name}.csv")
+            z.write(osp.join(output_dir, f"{out_name}.mp4"),
+                f"{out_name}.mp4")
 
 
 if __name__=="__main__":

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Download</title>
+    <link rel="stylesheet" type="text/css" href="../static/index.css" />
+    <script
+      src="https://code.jquery.com/jquery-3.3.1.min.js"
+      integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+      crossorigin="anonymous"
+    ></script>
+    <script type="text/javascript" src="../static/download.js"></script>
+  </head>
+
+  <body>
+    <!-- For each filename, create box (progress text, filename, link) -->
+    {% for task in tasks %}
+      <b>{{ task.uuid|e }}</b>
+      <b>{{ task.name|e }}</b>
+      <div class="progress" id="progress_{{task.uuid}}">Processing...</div>
+      <a class="progress" id="download_{{task.uuid}}"
+         href="/uploads/{{task.uuid}}">Download
+      </a>
+      <br>
+    {% endfor %}
+    <div class="container">
+      <a href="/download" target="blank"
+        ><button class="btn btn-default">Download!</button></a
+      >
+    </div>
+  </body>
+</html>
