@@ -13,11 +13,10 @@ def main(checkpoint_file, data_root_dir, output_dir, out_name="out",
         if not osp.exists(output_dir):
             os.makedirs(output_dir)
 
-    with open(osp.join(output_dir, "download.txt"), "w+") as file:
-        if write_images:
-            file.write(f"{out_name}.zip")
-        else:
-            file.write(f"{out_name}.csv")
+    with open(osp.join(output_dir, "progress.txt"), "w+") as file:
+        string = "PROCESSING"
+        print(string)
+        file.write(string)
 
     # Build Model
     tracker = Trackformer()
@@ -53,6 +52,7 @@ def main(checkpoint_file, data_root_dir, output_dir, out_name="out",
         path = osp.join(output_dir, f"{out_name}.csv")
         tracker.write_results(results, path)
 
+        print(write_images)
         if write_images:
             out_path = osp.join(output_dir, "plots")
             tracker.plot_seq(results, out_path, write_images)
@@ -60,7 +60,7 @@ def main(checkpoint_file, data_root_dir, output_dir, out_name="out",
 
     with open(osp.join(output_dir, "progress.txt"), "w+") as file:
         print("COMPLETE")
-        file.write(f"COMPLETE")
+        file.write("COMPLETE")
 
     if write_images:
         # Zip
@@ -88,7 +88,7 @@ if __name__=="__main__":
     output_dir = osp.join("uploads", args.uuid)
     data_root_dir = output_dir
     write_images = "pretty" if args.plotseq else False
-    write_images = "debug" if args.plotseq else write_images
+    write_images = "debug" if args.debug else write_images
     debug = args.debug
 
     main(checkpoint_file, data_root_dir, output_dir, args.out_name,

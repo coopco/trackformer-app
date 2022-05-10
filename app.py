@@ -3,14 +3,25 @@ import subprocess
 from flask import Flask, flash, request, redirect, render_template, send_file, url_for, send_from_directory
 from werkzeug.utils import secure_filename
 
+import redis
+from rq import Queue
+
 import uuid
 
-app=Flask(__name__)
+import time
+
+import track
+
+app = Flask(__name__)
+
+r = redis.Redis()
+q = Queue(connection=r)
 
 app.config["UPLOAD_FOLDER"] = os.path.join(app.root_path, 'uploads')
 app.config["UPLOAD_FILENAME"] = 'in.mp4'
 app.config["DOWNLOAD_FILENAME"] = 'out.mp4'
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+
 
 
 @app.route("/", methods=['GET', 'POST'])
@@ -26,26 +37,45 @@ def upload_file():
             return redirect(request.url)
 
         if file:
+            plotseq = True if request.form.get('plotseq') == "true" else False
+            debug = True if request.form.get('debug') == "true" else False
+
             file_id = str(uuid.uuid4().hex)
             path = os.path.join(app.config["UPLOAD_FOLDER"], file_id)
             os.makedirs(path)
-            file.save(os.path.join(path, app.config["UPLOAD_FILENAME"]))
 
             out_name = os.path.splitext(file.filename)[0]
-            command = ['python', 'track.py', '--uuid', file_id,
-                       '--out-name', out_name]
 
-            if request.form.get('plotseq') == "true":
-                command.append('--plotseq')
-            if request.form.get('debug') == "true":
-                command.append('--debug')
+            with open(os.path.join(path, "download.txt"), "w+") as f:
+                if plotseq:
+                    f.write(f"{out_name}.zip")
+                else:
+                    f.write(f"{out_name}.csv")
 
-            print(command)
-            subprocess.Popen(command)
+            with open(os.path.join(path, "progress.txt"), "w+") as f:
+                f.write("QUEUED")
+
+            file.save(os.path.join(path, app.config["UPLOAD_FILENAME"]))
+
+            q.enqueue(run_command, file_id, out_name, plotseq, debug,
+                      job_id=file_id)
 
             return file_id
 
     return render_template("index.html")
+
+
+def run_command(file_id, out_name, plotseq, debug):
+    uuid = file_id
+    model_file = "models/ant_finetune/checkpoint.pth"
+    output_dir = os.path.join("uploads", uuid)
+    data_root_dir = output_dir
+    write_images = "pretty" if plotseq else False
+    write_images = "debug" if debug and plotseq else write_images
+
+    track.main(model_file, data_root_dir, output_dir,
+               out_name, write_images, debug)
+    return "Complete"
 
 
 @app.route('/progress/<name>')
@@ -55,13 +85,25 @@ def progress(name):
         f = open(os.path.join(app.config["UPLOAD_FOLDER"], name, "progress.txt"))
     except FileNotFoundError:
         return "Processing..."
-    progress = f.read()
+    progress = f.read().split()
     f.close()
 
-    if progress == "COMPLETE":
+    if progress[0] == "COMPLETE":
         return "COMPLETE"
+    elif progress[0] == "PROCESSING":
+        return "Processing..."
+    elif progress[0] == "QUEUED":
+        # Note, this is O(n)
+        job_ids = q.job_ids
+        try:
+            place = job_ids.index(name) + 1
+            string = f"Queued: {place}/{len(job_ids)}"
+        except ValueError:
+            string = "Queued..."
+
+        return string
     else:
-        stage, frame_id, num_frames = progress.split()
+        stage, frame_id, num_frames = progress
         return f"{stage}: Frame {frame_id}/{num_frames}"
 
 
