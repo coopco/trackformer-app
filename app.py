@@ -23,7 +23,6 @@ app.config["DOWNLOAD_FILENAME"] = 'out.mp4'
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 
-
 @app.route("/", methods=['GET', 'POST'])
 def upload_file():
     if request.method == 'POST':
@@ -46,14 +45,11 @@ def upload_file():
 
             out_name = os.path.splitext(file.filename)[0]
 
-            with open(os.path.join(path, "download.txt"), "w+") as f:
-                if plotseq:
-                    f.write(f"{out_name}.zip")
-                else:
-                    f.write(f"{out_name}.csv")
-
-            with open(os.path.join(path, "progress.txt"), "w+") as f:
-                f.write("QUEUED")
+            r.hset(file_id, mapping={
+                "name": out_name,
+                "progress": "QUEUED",
+                "download": out_name + ('.zip' if plotseq else '.csv')
+            })
 
             file.save(os.path.join(path, app.config["UPLOAD_FILENAME"]))
 
@@ -68,25 +64,17 @@ def upload_file():
 def run_command(file_id, out_name, plotseq, debug):
     uuid = file_id
     model_file = "models/ant_finetune/checkpoint.pth"
-    output_dir = os.path.join("uploads", uuid)
-    data_root_dir = output_dir
     write_images = "pretty" if plotseq else False
     write_images = "debug" if debug and plotseq else write_images
 
-    track.main(model_file, data_root_dir, output_dir,
-               out_name, write_images, debug)
+    track.main(model_file, uuid, r, out_name, write_images, debug)
     return "Complete"
 
 
 @app.route('/progress/<name>')
 def progress(name):
     # TODO Error handling
-    try:
-        f = open(os.path.join(app.config["UPLOAD_FOLDER"], name, "progress.txt"))
-    except FileNotFoundError:
-        return "Processing..."
-    progress = f.read().split()
-    f.close()
+    progress = r.hget(name, "progress").decode('utf-8').split()
 
     if progress[0] == "COMPLETE":
         return "COMPLETE"
@@ -109,38 +97,36 @@ def progress(name):
 
 @app.route('/uploads/<name>')
 def download_file(name):
-    folder = os.path.join(app.config["UPLOAD_FOLDER"], name)
-    f = open(os.path.join(folder, "download.txt"))
-    download_file = f.read()
-    f.close()
+    download_file = r.hget(name, "download").decode('utf-8')
 
     return send_from_directory(folder, download_file)
 
 
-@app.route('/download', methods=['GET'])
-def return_file():
-    obj = request.args.get('obj')
-    loc = os.path.join("static", obj)
-    print(loc)
-    try:
-        return send_file(os.path.join("runs/detect", obj), attachment_filename=obj)
-    except Exception as e:
-        return str(e)
+@app.route('/download/<uuids>')
+def return_file(uuids):
+    # TODO should probably convert everything to redis first
+    uuids = uuids.split('-')
+    if len(uuids) == 0:
+        download_file = r.hget(name, "download").decode('utf-8')
+
+        return send_from_directory(folder, download_file)
+    else:
+        names = []
+        for uuid in uuids:
+            f = open(os.path.join(app.config["UPLOAD_FOLDER"],
+                                  uuid, "download.txt"))
+            name = os.path.splitext(f.read())[0]
+            names.append(name)
+            f.close()
+
 
 @app.route('/u/<uuid>', methods=['GET'])
 def download_page(uuid):
     uuids = uuid.split('-')
-    names = []
-    for uuid in uuids:
-        # TODO error handling
-        f = open(os.path.join(app.config["UPLOAD_FOLDER"], uuid, "download.txt"))
-        name = os.path.splitext(f.read())[0]
-        names.append(name)
-        f.close()
+    names = [os.path.splitext(r.hget(uuid, "name").decode('utf-8'))[0] for uuid in uuids]
 
     tasks = [{'uuid': uuid, 'name': name} for uuid, name in zip(uuids, names)]
-    # Setup progress get requests?
-    #   Need download.js file in static
+
     return render_template('download.html', tasks=tasks)
 
 

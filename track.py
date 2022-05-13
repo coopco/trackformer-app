@@ -7,16 +7,17 @@ from argparse import ArgumentParser
 from trackformer import Trackformer
 from util import video_to_frames, frames_to_video
 
-def main(checkpoint_file, data_root_dir, output_dir, out_name="out",
+
+def main(checkpoint_file, uuid, r, out_name="out",
          write_images="pretty", debug=False):
+    output_dir = osp.join("uploads", uuid)
+    data_root_dir = output_dir
+
     if output_dir is not None:
         if not osp.exists(output_dir):
             os.makedirs(output_dir)
 
-    with open(osp.join(output_dir, "progress.txt"), "w+") as file:
-        string = "PROCESSING"
-        print(string)
-        file.write(string)
+    r.hset(uuid, "progress", "PROCESSING")
 
     # Build Model
     tracker = Trackformer()
@@ -37,10 +38,8 @@ def main(checkpoint_file, data_root_dir, output_dir, out_name="out",
             break
 
         tracker.step(frame_data)
-        with open(osp.join(output_dir, "progress.txt"), "w+") as file:
-            string = f"Tracking {str(frame_id+1)} {len(tracker.data_loader)}"
-            print(string)
-            file.write(string)
+        string = f"Tracking {str(frame_id+1)} {len(tracker.data_loader)}"
+        r.hset(uuid, "progress", string)
 
     results = tracker.results()
     time_total = time.time() - start
@@ -58,9 +57,7 @@ def main(checkpoint_file, data_root_dir, output_dir, out_name="out",
             tracker.plot_seq(results, out_path, write_images)
             frames_to_video(out_path, osp.join(output_dir, f"{out_name}.mp4"))
 
-    with open(osp.join(output_dir, "progress.txt"), "w+") as file:
-        print("COMPLETE")
-        file.write("COMPLETE")
+    r.hset(uuid, "progress", "COMPLETE")
 
     if write_images:
         # Zip
@@ -85,11 +82,12 @@ if __name__=="__main__":
     args = parser.parse_args()
 
     checkpoint_file = args.model_file
-    output_dir = osp.join("uploads", args.uuid)
-    data_root_dir = output_dir
     write_images = "pretty" if args.plotseq else False
     write_images = "debug" if args.debug else write_images
     debug = args.debug
 
-    main(checkpoint_file, data_root_dir, output_dir, args.out_name,
+    import redis
+    r = redis.Redis()
+
+    main(checkpoint_file, args.uuid, r, args.out_name,
          write_images, debug)
