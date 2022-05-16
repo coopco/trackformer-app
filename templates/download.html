@@ -12,20 +12,37 @@
   </head>
 
   <body>
-    <!-- For each filename, create box (progress text, filename, link) -->
-    {% for task in tasks %}
-      <b>{{ task.uuid|e }}</b>
-      <b>{{ task.name|e }}</b>
-      <div class="progress" id="progress_{{task.uuid}}">Processing...</div>
-      <a class="progress" id="download_{{task.uuid}}"
-         href="/uploads/{{task.uuid}}">Download
-      </a>
-      <br>
-    {% endfor %}
-    <div class="container">
-      <a href="/download" target="blank"
-        ><button class="btn btn-default">Download!</button></a
-      >
+    <div class="App">
+      <!-- For each filename, create box (progress text, filename, link) -->
+      <button id="select-all">Select All</button>
+      <button id="download-selected">Download Selected</button>
+      <!--<button id="cancel-selected">Cancel Selected</button>-->
+      <button id="share-selected">Share Selected</button>
+
+      <div id="myModal" class="modal">
+        <div class="modal-content">
+          <span class="close">&times;</span>
+          <p>Some text in the modal...</p>
+          <input type="text" id="share-link" value="asdfasd" readonly>
+        </div>
+      </div>
+
+      {% for task in tasks %}
+        <div class="row">
+          <div class="task-box">
+            <!--<button class="cancel" id="cancel_{{task.uuid}}">Cancel</button>-->
+            <label for="select_{{task.uuid}}">Select:</label>
+            <input type="checkbox" class="select" id="select_{{task.uuid}}">
+            <p>{{ task.uuid|e }}</p>
+            <p>{{ task.name|e }}</p>
+            <p class="progress" id="progress_{{task.uuid}}">Processing...</p>
+            <a class="download" id="download_{{task.uuid}}"
+               href="/uploads/{{task.uuid}}">Download
+            </a>
+          </div>
+        </div>
+        <br>
+      {% endfor %}
     </div>
   </body>
 </html>
