@@ -29,34 +29,35 @@ def upload_file():
         if 'file' not in request.files:
             flash('No file part')
             return redirect(request.url)
+
         file = request.files['file']
 
         if file.filename == '':
             flash('No selected file')
             return redirect(request.url)
 
-        if file:
-            plotseq = True if request.form.get('plotseq') == "true" else False
-            debug = True if request.form.get('debug') == "true" else False
+        plotseq = True if request.form.get('plotseq') == "true" else False
+        debug = True if request.form.get('debug') == "true" else False
 
-            file_id = str(uuid.uuid4().hex)
-            path = os.path.join(app.config["UPLOAD_FOLDER"], file_id)
-            os.makedirs(path)
+        file_id = str(uuid.uuid4().hex)
+        path = os.path.join(app.config["UPLOAD_FOLDER"], file_id)
+        os.makedirs(path)
 
-            out_name = os.path.splitext(file.filename)[0]
+        out_name = os.path.splitext(file.filename)[0]
 
-            r.hset(file_id, mapping={
-                "name": out_name,
-                "progress": "QUEUED",
-                "download": out_name + ('.zip' if plotseq else '.csv')
-            })
+        r.hset(file_id, mapping={
+            "name": out_name,
+            "progress": "QUEUED",
+            "download": out_name + ('.zip' if plotseq else '.csv')
+        })
+        r.expire(file_id, 24*60*60)
 
-            file.save(os.path.join(path, app.config["UPLOAD_FILENAME"]))
+        file.save(os.path.join(path, app.config["UPLOAD_FILENAME"]))
 
-            q.enqueue(run_command, file_id, out_name, plotseq, debug,
-                      job_id=file_id)
+        q.enqueue(run_command, file_id, out_name, plotseq, debug,
+                  job_id=file_id)
 
-            return file_id
+        return file_id
 
     return render_template("index.html")
 
@@ -71,10 +72,10 @@ def run_command(file_id, out_name, plotseq, debug):
     return "Complete"
 
 
-@app.route('/progress/<name>')
-def progress(name):
+@app.route('/progress/<uuid>')
+def progress(uuid):
     # TODO Error handling
-    progress = r.hget(name, "progress").decode('utf-8').split()
+    progress = r.hget(uuid, "progress").decode('utf-8').split()
 
     if progress[0] == "COMPLETE":
         return "COMPLETE"
@@ -84,7 +85,7 @@ def progress(name):
         # Note, this is O(n)
         job_ids = q.job_ids
         try:
-            place = job_ids.index(name) + 1
+            place = job_ids.index(uuid) + 1
             string = f"Queued: {place}/{len(job_ids)}"
         except ValueError:
             string = "Queued..."
@@ -95,11 +96,11 @@ def progress(name):
         return f"{stage}: Frame {frame_id}/{num_frames}"
 
 
-@app.route('/uploads/<name>')
-def download_file(name):
-    download_file = r.hget(name, "download").decode('utf-8')
+@app.route('/uploads/<uuid>')
+def download_file(uuid):
+    download_file = r.hget(uuid, "download").decode('utf-8')
 
-    return send_from_directory(folder, download_file)
+    return send_from_directory(os.path.join("uploads", uuid), download_file)
 
 
 @app.route('/download/<uuids>')
@@ -107,10 +108,16 @@ def return_file(uuids):
     # TODO should probably convert everything to redis first
     uuids = uuids.split('-')
     if len(uuids) == 0:
-        download_file = r.hget(name, "download").decode('utf-8')
+        uuid = uuids[0]
+        folder = os.path.join("uploads", uuid)
+        download_file = r.hget(uuid, "download").decode('utf-8')
 
         return send_from_directory(folder, download_file)
     else:
+        uuid = str(uuid.uuid4().hex)
+        r.lpush(uuid, *uuids)
+        # Notify progress  ('Zipping files...')
+        # Some dialog box when download ready
         names = []
         for uuid in uuids:
             f = open(os.path.join(app.config["UPLOAD_FOLDER"],

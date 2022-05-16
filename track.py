@@ -42,7 +42,6 @@ def main(checkpoint_file, uuid, r, out_name="out",
         r.hset(uuid, "progress", string)
 
     results = tracker.results()
-    time_total = time.time() - start
 
     print(f"RUNTIME: {time.time() - start :.2f} s")
 

@@ -1,6 +1,6 @@
-flask
-redis
-rq
+flask=2.0.2
+redis=4.3.1
+rqa=1.10.1
 argon2-cffi==20.1.0
 astroid==2.4.2
 async-generator==1.10
