@@ -25,6 +25,5 @@ dist
 uploads/
 test_track/
 venv/
-models/
 notes.org
 dump.rdb
