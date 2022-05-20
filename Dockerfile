@@ -12,18 +12,15 @@ RUN pip install -r requirements.txt
 #RUN pip install -U 'git+https://github.com/timmeinhardt/cocoapi.git#subdirectory=PythonAPI'
 
 RUN pip install Flask
-#RUN apt-get update && apt-get install -y zip
-#RUN apt-get update && apt-get install -y wget
-#RUN wget https://github.com/coopco/trackformer-app/releases/download/v0.1.0/ant-finetune.zip
-#RUN unzip ant-finetune.zip -d models
 
 RUN apt-get update && apt-get install -y redis-server
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y libopencv-dev python3-opencv
 
-# TODO Try copying just src/trackformer/models/ops across and compiling before copying everything else
-COPY . .
+COPY src/trackformer/models/ops src/trackformer/models/ops
 RUN python src/trackformer/models/ops/setup.py build --build-base=src/trackformer/models/ops/ install
+
+COPY . .
 
 EXPOSE 5000
 
