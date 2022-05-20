@@ -1,0 +1,5 @@
+image: coopco/trackformer-app
+port: 5000
+resources:
+  replicas: 1
+  instanceType: RTX4000

@@ -10,7 +10,7 @@ import uuid
 
 import time
 
-import track
+from track import run_command
 
 app = Flask(__name__)
 
@@ -60,16 +60,6 @@ def upload_file():
         return file_id
 
     return render_template("index.html")
-
-
-def run_command(file_id, out_name, plotseq, debug):
-    uuid = file_id
-    model_file = "models/ant_finetune/checkpoint.pth"
-    write_images = "pretty" if plotseq else False
-    write_images = "debug" if debug and plotseq else write_images
-
-    track.main(model_file, uuid, r, out_name, write_images, debug)
-    return "Complete"
 
 
 @app.route('/progress/<uuid>')
@@ -139,4 +129,4 @@ def download_page(uuid):
 
 if __name__ == "__main__":
     print('to upload files navigate to http://127.0.0.1:5000/')
-    app.run(host='127.0.0.1', port=5000, debug=True, threaded=True)
+    app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)

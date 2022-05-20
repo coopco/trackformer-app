@@ -6,6 +6,18 @@ from argparse import ArgumentParser
 
 from trackformer import Trackformer
 from util import video_to_frames, frames_to_video
+import redis
+
+
+def run_command(file_id, out_name, plotseq, debug):
+    r = redis.Redis()
+    uuid = file_id
+    model_file = "models/ant_finetune/checkpoint.pth"
+    write_images = "pretty" if plotseq else False
+    write_images = "debug" if debug and plotseq else write_images
+
+    main(model_file, uuid, r, out_name, write_images, debug)
+    return "Complete"
 
 
 def main(checkpoint_file, uuid, r, out_name="out",
