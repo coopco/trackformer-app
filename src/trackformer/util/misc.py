@@ -19,7 +19,6 @@ import torch.nn.functional as F
 # needed due to empty tensor bug in pytorch and torchvision 0.5
 import torchvision
 from torch import Tensor
-from visdom import Visdom
 
 if float(torchvision.__version__[:3]) < 0.7:
     from torchvision.ops import _new_empty_tensor
@@ -368,8 +367,6 @@ def setup_for_distributed(is_master):
             pass
         def images(*args, **kwargs):
             pass
-        Visdom.line = line
-        Visdom.images = images
 
 
 def is_dist_avail_and_initialized():

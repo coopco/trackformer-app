@@ -9,10 +9,7 @@ RUN apt-get update && apt-get install -y gcc g++ build-essential \
 
 WORKDIR /trackformer-app
 
-# TODO Download resnet 50
-
-RUN pip install numpy cmake Flask
-#RUN pip install -U 'git+https://github.com/timmeinhardt/cocoapi.git#subdirectory=PythonAPI'
+RUN pip install numpy==1.19.2 cmake==3.22.4 Flask==2.1.2
 
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
