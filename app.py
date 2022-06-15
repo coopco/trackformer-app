@@ -14,12 +14,21 @@ from track import run_command
 
 app = Flask(__name__)
 
-r = redis.Redis()
-q = Queue(connection=r)
+app.config.update(
+    UPLOAD_FOLDER=os.path.join(app.root_path, 'uploads'),
+    UPLOAD_FILENAME='in.mp4',
+    DOWNLOAD_FILENAME='out.mp4',
+    TASK_TIMEOUT=60*60,
+    UPLOAD_NUM_LIMIT=10,
+    MAX_CONTENT_LENGTH=1000*1000*1000
+)
 
-app.config["UPLOAD_FOLDER"] = os.path.join(app.root_path, 'uploads')
-app.config["UPLOAD_FILENAME"] = 'in.mp4'
-app.config["DOWNLOAD_FILENAME"] = 'out.mp4'
+r = redis.Redis()
+q = Queue(connection=r,
+          default_timeout=app.config['TASK_TIMEOUT'])
+
+# import toml
+# app.config.from_file('config.toml', load=toml.load)
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 
