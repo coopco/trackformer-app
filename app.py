@@ -1,6 +1,6 @@
 import sys, os
 import subprocess
-from flask import Flask, flash, request, redirect, render_template, send_file, url_for, send_from_directory
+from flask import abort, Flask, flash, request, redirect, render_template, send_file, url_for, send_from_directory
 from werkzeug.utils import secure_filename
 
 import redis
@@ -129,6 +129,10 @@ def return_file(uuids):
 @app.route('/u/<uuid>', methods=['GET'])
 def download_page(uuid):
     uuids = uuid.split('-')
+
+    if len(uuids) > app.config['UPLOAD_NUM_LIMIT']:
+        abort(404)
+
     names = [os.path.splitext(r.hget(uuid, "name").decode('utf-8'))[0] for uuid in uuids]
 
     tasks = [{'uuid': uuid, 'name': name} for uuid, name in zip(uuids, names)]
