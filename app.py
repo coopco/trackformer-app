@@ -69,8 +69,10 @@ def upload_file():
 
 @app.route('/progress/<uuid>')
 def progress(uuid):
-    # TODO Error handling
-    progress = r.hget(uuid, "progress").decode('utf-8').split()
+    try:
+        progress = r.hget(uuid, "progress").decode('utf-8').split()
+    except AttributeError:
+        abort(404)
 
     if progress[0] == "COMPLETE":
         return "COMPLETE"
@@ -93,33 +95,12 @@ def progress(uuid):
 
 @app.route('/uploads/<uuid>')
 def download_file(uuid):
-    download_file = r.hget(uuid, "download").decode('utf-8')
+    try:
+        download_file = r.hget(uuid, "download").decode('utf-8')
+    except AttributeError:
+        abort(404)
 
     return send_from_directory(os.path.join("uploads", uuid), download_file)
-
-
-@app.route('/download/<uuids>')
-def return_file(uuids):
-    # TODO should probably convert everything to redis first
-    uuids = uuids.split('-')
-    if len(uuids) == 0:
-        uuid = uuids[0]
-        folder = os.path.join("uploads", uuid)
-        download_file = r.hget(uuid, "download").decode('utf-8')
-
-        return send_from_directory(folder, download_file)
-    else:
-        uuid = str(uuid.uuid4().hex)
-        r.lpush(uuid, *uuids)
-        # Notify progress  ('Zipping files...')
-        # Some dialog box when download ready
-        names = []
-        for uuid in uuids:
-            f = open(os.path.join(app.config["UPLOAD_FOLDER"],
-                                  uuid, "download.txt"))
-            name = os.path.splitext(f.read())[0]
-            names.append(name)
-            f.close()
 
 
 @app.route('/u/<uuid>', methods=['GET'])
@@ -129,11 +110,19 @@ def download_page(uuid):
     if len(uuids) > app.config['UPLOAD_NUM_LIMIT']:
         abort(404)
 
-    names = [os.path.splitext(r.hget(uuid, "name").decode('utf-8'))[0] for uuid in uuids]
+    try:
+        names = [os.path.splitext(r.hget(uuid, "name").decode('utf-8'))[0] for uuid in uuids]
+    except AttributeError:
+        abort(404)
 
     tasks = [{'uuid': uuid, 'name': name} for uuid, name in zip(uuids, names)]
 
     return render_template('download.html', tasks=tasks)
+
+
+@app.errorhandler(413)
+def file_too_big(e):
+    return 'File to big: ' + str(e)
 
 
 if __name__ == "__main__":
