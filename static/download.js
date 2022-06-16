@@ -99,8 +99,7 @@ async function update_progress(name) {
     });
     await new Promise(r => setTimeout(r, 500))
   }
-  //$("#link").css("visibility", "visible");
-  //$("#download").attr("href", "/uploads/" + name);
+  $("#download_" + name).css("visibility", "visible");
 };
 
 async function cancel_task(name) {

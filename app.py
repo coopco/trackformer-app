@@ -20,7 +20,7 @@ app.config.update(
     DOWNLOAD_FILENAME='out.mp4',
     TASK_TIMEOUT=60*60,
     UPLOAD_NUM_LIMIT=10,
-    MAX_CONTENT_LENGTH=1000*1000*1000
+    MAX_CONTENT_LENGTH=1024*1024*1024
 )
 
 r = redis.Redis()
@@ -40,10 +40,6 @@ def upload_file():
             return redirect(request.url)
 
         file = request.files['file']
-
-        if file.filename == '':
-            flash('No selected file')
-            return redirect(request.url)
 
         plotseq = True if request.form.get('plotseq') == "true" else False
         debug = True if request.form.get('debug') == "true" else False
