@@ -28,6 +28,11 @@ window.onload = () => {
           console.log(data.getAllResponseHeaders());
         },
         success: function (data) {
+          if (data == '413') {
+            alert('File exceeds maximum allowed file size.')
+            return;
+          }
+
           url = $("#download_upload").attr("href")
           url = url + (url.length <= 3 ? '' : '-') + data
           $("#download_upload").attr("href", url);

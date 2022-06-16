@@ -122,7 +122,7 @@ def download_page(uuid):
 
 @app.errorhandler(413)
 def file_too_big(e):
-    return 'File to big: ' + str(e)
+    return '413'
 
 
 if __name__ == "__main__":
