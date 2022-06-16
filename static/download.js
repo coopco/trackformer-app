@@ -81,7 +81,7 @@ async function update_progress(name) {
   // make request
   console.log(name);
   var progress_text = "";
-  while (progress_text != "COMPLETE") {
+  while (progress_text != "COMPLETE" && progress_text != "FAILED") {
     $.ajax({
         url: "/progress/" + name,
         type: "GET",
@@ -99,7 +99,10 @@ async function update_progress(name) {
     });
     await new Promise(r => setTimeout(r, 500))
   }
-  $("#download_" + name).css("visibility", "visible");
+
+  if (progress_text == "COMPLETE") {
+    $("#download_" + name).css("visibility", "visible");
+  }
 };
 
 async function cancel_task(name) {

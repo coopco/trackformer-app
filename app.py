@@ -5,6 +5,7 @@ from werkzeug.utils import secure_filename
 
 import redis
 from rq import Queue
+from rq.job import Job
 
 import uuid
 
@@ -71,10 +72,13 @@ def upload_file():
 def progress(uuid):
     try:
         progress = r.hget(uuid, "progress").decode('utf-8').split()
+        failed = Job.fetch(uuid, connection=r).is_failed
     except AttributeError:
         abort(404)
 
-    if progress[0] == "COMPLETE":
+    if failed:
+        return "FAILED"
+    elif progress[0] == "COMPLETE":
         return "COMPLETE"
     elif progress[0] == "PROCESSING":
         return "Processing..."
