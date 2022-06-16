@@ -27,8 +27,8 @@
         </div>
       </div>
 
-      {% for task in tasks %}
-        <div class="row">
+      <div class="task-box-wrapper">
+        {% for task in tasks %}
           <div class="task-box">
             <!--<button class="cancel" id="cancel_{{task.uuid}}">Cancel</button>-->
             <label for="select_{{task.uuid}}">Select:</label>
@@ -40,9 +40,8 @@
               href="/uploads/{{task.uuid}}">Download
             </a>
           </div>
-        </div>
-        <br>
-      {% endfor %}
+        {% endfor %}
+      </div>
     </div>
   </body>
 </html>

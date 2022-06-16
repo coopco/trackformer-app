@@ -29,8 +29,10 @@ html {
   display: table;
 }
 
+.task-box-wrapper {
+}
+
 .task-box {
-  /*background-color: #4caf50;*/
   background-color: #4bc66d;
   color: #f1fcf9;
   padding: 15px 32px;
@@ -39,8 +41,6 @@ html {
   font-size: 16px;
   box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
   margin: 40px 40px;
-  float: left;
-  /* display: none; */
 }
 
 .complete {
