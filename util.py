@@ -50,7 +50,6 @@ def frames_to_video(input_dir, output_file):
     video.release()
 
 
-
 # Borrowed from trackformer code
 def rand_cmap(nlabels, type='bright'):
     """
@@ -95,6 +94,50 @@ def rand_cmap(nlabels, type='bright'):
     return random_colormap
 
 
+def plot_frame(frame_id, frame_data, tracks, output_dir, write_images, cmap):
+    if not osp.exists(output_dir):
+        os.makedirs(output_dir)
+
+    img_path = frame_data['img_path'][0]
+    img = cv2.imread(img_path)[:, :, (2, 1, 0)]
+    height, width, _ = img.shape
+
+    fig = plt.figure()
+    fig.set_size_inches(width / 96, height / 96)
+    ax = plt.Axes(fig, [0., 0., 1., 1.])
+    ax.set_axis_off()
+    fig.add_axes(ax)
+    ax.imshow(img)
+
+    for track_id, track_data in tracks.items():
+        if frame_id in track_data.keys():
+            bbox = track_data[frame_id]['bbox']
+
+            ax.add_patch(
+                plt.Rectangle(
+                    (bbox[0], bbox[1]),
+                    bbox[2] - bbox[0],
+                    bbox[3] - bbox[1],
+                    fill=False,
+                    linewidth=2.0,
+                    color=cmap(track_id),
+                ))
+
+            annotate_color = cmap(track_id)
+
+            if write_images == 'debug':
+                ax.annotate(
+                    f"{track_id} ({track_data[frame_id]['score']:.2f})",
+                    (bbox[0] + (bbox[2] - bbox[0]) / 2.0, bbox[1] + (bbox[3] - bbox[1]) / 2.0),
+                    color=annotate_color, weight='bold', fontsize=12, ha='center', va='center')
+
+
+    plt.axis('off')
+    plt.draw()
+    plt.savefig(osp.join(output_dir, osp.basename(img_path)), dpi=96)
+    plt.close()
+
+
 # Borrowed from trackformer code
 def plot_sequence(tracks, data_loader, output_dir, write_images):
     """Plots a whole sequence
@@ -112,8 +155,7 @@ def plot_sequence(tracks, data_loader, output_dir, write_images):
     for frame_id, frame_data  in enumerate(data_loader):
         with open(osp.join(output_dir, "../", "progress.txt"), "w+") as file:
             string = f"Plotting {str(frame_id+1)} {len(data_loader)}"
-            print(string)
-            file.write(string)
+            r.hset(uuid, "progress", string)
 
         img_path = frame_data['img_path'][0]
         img = cv2.imread(img_path)[:, :, (2, 1, 0)]

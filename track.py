@@ -5,7 +5,7 @@ from os import path as osp
 from argparse import ArgumentParser
 
 from trackformer import Trackformer
-from util import video_to_frames, frames_to_video
+from util import video_to_frames, frames_to_video, rand_cmap
 import redis
 
 
@@ -65,7 +65,17 @@ def main(checkpoint_file, uuid, r, out_name="out",
         print(write_images)
         if write_images:
             out_path = osp.join(output_dir, "plots")
-            tracker.plot_seq(results, out_path, write_images)
+            r.hset(uuid, "progress", "Plotting")
+
+            # Plot Seq
+            for frame_id, frame_data in enumerate(tracker.data_loader):
+                # TODO handle cmap better
+                cmap = rand_cmap(len(results), type='bright')
+                string = f"Plotting {str(frame_id+1)} {len(tracker.data_loader)}"
+                r.hset(uuid, "progress", string)
+                tracker.plot_frame(frame_id, frame_data, results, out_path, write_images, cmap)
+
+            r.hset(uuid, "progress", "PROCESSING")
             frames_to_video(out_path, osp.join(output_dir, f"{out_name}.mp4"))
 
     r.hset(uuid, "progress", "COMPLETE")

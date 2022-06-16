@@ -16,7 +16,7 @@ from src.trackformer.models.tracker import Tracker
 from src.trackformer.util.misc import nested_dict_to_namespace
 from src.trackformer.datasets.tracking.demo_sequence import DemoSequence
 
-from util import interpolate_tracks, plot_sequence
+from util import interpolate_tracks, plot_sequence, plot_frame, rand_cmap
 
 # TODO better tracker_cfg handling
 # TODO Do it without this factory code
@@ -113,6 +113,9 @@ class Trackformer:
 
     def reset(self):
         self.tracker.reset()
+
+    def plot_frame(self, frame_id, frame_data, results, output_dir, options, cmap):
+        plot_frame(frame_id, frame_data, results, output_dir, options, cmap)
 
     def plot_seq(self, results, output_dir, options):
         plot_sequence(results, self.data_loader, output_dir,
